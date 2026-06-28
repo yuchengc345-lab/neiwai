@@ -39,7 +39,10 @@ class ExtractQuestionTests(unittest.TestCase):
             }
         ]
         attach_notes(questions, "註：這是解析")
-        self.assertEqual(questions[0]["explanation"], "這是解析")
+        self.assertIn("答案：A", questions[0]["explanation"])
+        self.assertIn("作答關鍵：", questions[0]["explanation"])
+        self.assertIn("解析：這是解析", questions[0]["explanation"])
+        self.assertIn("複習提醒：", questions[0]["explanation"])
 
     def test_normalize_question_id_generates_stable_ids(self):
         self.assertEqual(normalize_question_id("單元5 腫瘤疾病與護理", 1), "unit5-001")
