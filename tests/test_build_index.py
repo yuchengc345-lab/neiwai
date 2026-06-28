@@ -11,7 +11,7 @@ SAMPLE_QUESTIONS = [
         "question": "題目內容 A",
         "options": ["A1", "B1", "C1", "D1"],
         "answer": 1,
-        "explanation": "解析內容 A",
+        "explanation": "答案：B1\n作答關鍵：先看題幹\n解析：這是解析內容 A\n複習提醒：回到關鍵字",
     },
     {
         "id": "unit7-001",
@@ -19,7 +19,7 @@ SAMPLE_QUESTIONS = [
         "question": "題目內容 B",
         "options": ["A2", "B2", "C2", "D2"],
         "answer": 0,
-        "explanation": "解析內容 B",
+        "explanation": "答案：A2\n作答關鍵：先抓重點\n解析：這是解析內容 B\n複習提醒：優先比對正確選項",
     },
 ]
 
@@ -87,6 +87,28 @@ class ProjectSkeletonTests(unittest.TestCase):
         self.assertIn("解析", html)
         self.assertIn("wrongCount += 1", html)
         self.assertIn("buttons[item.answer].classList.add('correct')", html)
+
+    def test_render_index_preserves_multiline_explanations(self):
+        html = render_index(
+            [
+                {
+                    "id": "unit5-001",
+                    "unit": "單元5 腫瘤疾病與護理",
+                    "question": "題目內容 A",
+                    "options": ["A1", "B1", "C1", "D1"],
+                    "answer": 1,
+                    "explanation": "答案：B1\n作答關鍵：抓關鍵字\n解析：比對題幹\n複習提醒：先圈重點",
+                }
+            ]
+        )
+        self.assertIn("white-space: pre-line", html)
+        self.assertIn("explanationText.textContent = item.explanation", html)
+
+    def test_generated_html_contains_standardized_explanation_labels(self):
+        html = render_index(SAMPLE_QUESTIONS[:1])
+        self.assertIn("答案：", html)
+        self.assertIn("作答關鍵：", html)
+        self.assertIn("複習提醒：", html)
 
 
 if __name__ == "__main__":
