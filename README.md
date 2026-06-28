@@ -2,6 +2,8 @@
 
 Single-file nursing quiz app for GitHub Pages.
 
+The app now starts with a unit selection screen, then enters unit-scoped quiz practice.
+
 ## Local regeneration
 
 ```powershell
