@@ -1,0 +1,69 @@
+import unittest
+
+from scripts.extract_questions import (
+    attach_notes,
+    extract_questions_from_docx,
+    fallback_explanation,
+    normalize_question_id,
+    parse_question_paragraph,
+)
+
+
+class ExtractQuestionTests(unittest.TestCase):
+    def test_parse_question_paragraph_extracts_answer_and_options(self):
+        parsed = parse_question_paragraph(
+            "（Ｃ）12有關範例題目何者正確？(A)選項一　(B)選項二　(C)選項三　(D)選項四。(112.2.高)",
+            "單元X",
+        )
+        self.assertEqual(parsed["unit"], "單元X")
+        self.assertEqual(parsed["answer"], 2)
+        self.assertEqual(parsed["question"], "有關範例題目何者正確？")
+        self.assertEqual(parsed["options"], ["選項一", "選項二", "選項三", "選項四"])
+
+    def test_parse_question_paragraph_allows_symbolic_question_index(self):
+        parsed = parse_question_paragraph(
+            "（Ｃ）;有關化學治療藥物作用機轉與副作用之敘述，下列何者錯誤？(A) 選項一　(B) 選項二　(C) 選項三　(D) 選項四。(111.2.高)",
+            "單元X",
+        )
+        self.assertEqual(parsed["question"], "有關化學治療藥物作用機轉與副作用之敘述，下列何者錯誤？")
+
+    def test_attach_notes_adds_explanation_to_previous_question(self):
+        questions = [
+            {
+                "id": "unitx-001",
+                "unit": "單元X",
+                "question": "題目",
+                "options": ["A", "B", "C", "D"],
+                "answer": 0,
+                "explanation": "",
+            }
+        ]
+        attach_notes(questions, "註：這是解析")
+        self.assertEqual(questions[0]["explanation"], "這是解析")
+
+    def test_normalize_question_id_generates_stable_ids(self):
+        self.assertEqual(normalize_question_id("單元5 腫瘤疾病與護理", 1), "unit5-001")
+
+    def test_fallback_explanation_mentions_correct_option(self):
+        question = {
+            "question": "題目",
+            "options": ["甲", "乙", "丙", "丁"],
+            "answer": 1,
+            "explanation": "",
+        }
+        text = fallback_explanation(question)
+        self.assertIn("乙", text)
+
+    def test_extract_questions_from_docx_reads_real_source(self):
+        questions = extract_questions_from_docx(
+            r"C:\Users\Cyril\OneDrive\Documents\單元5 腫瘤疾病與護理.docx",
+            "單元5 腫瘤疾病與護理",
+        )
+        self.assertGreater(len(questions), 80)
+        self.assertEqual(questions[0]["id"], "unit5-001")
+        self.assertEqual(len(questions[0]["options"]), 4)
+        self.assertTrue(questions[5]["explanation"])
+
+
+if __name__ == "__main__":
+    unittest.main()
