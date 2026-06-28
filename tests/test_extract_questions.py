@@ -2,6 +2,7 @@ import unittest
 
 from scripts.extract_questions import (
     attach_notes,
+    extract_all_sources,
     extract_questions_from_docx,
     fallback_explanation,
     normalize_question_id,
@@ -71,6 +72,31 @@ class ExtractQuestionTests(unittest.TestCase):
         self.assertIn("複習提醒：", text)
         self.assertEqual(len(text.splitlines()), 4)
 
+    def test_fallback_explanation_for_wrong_question_explains_question_type(self):
+        question = {
+            "question": "有關深部靜脈栓塞病人之護理措施，下列何者不適當？",
+            "options": ["抬高患肢", "穿彈性襪", "注意肺栓塞", "按摩患肢"],
+            "answer": 3,
+            "explanation": "",
+        }
+        text = fallback_explanation(question)
+        self.assertIn("題目問的是不適當", text)
+        self.assertIn("按摩患肢", text)
+        self.assertIn("其他選項", text)
+        self.assertNotIn("最符合題幹在考的重點", text)
+
+    def test_fallback_explanation_uses_topic_specific_nursing_guidance(self):
+        question = {
+            "question": "有關心衰竭病人護理指導，下列何者正確？",
+            "options": ["每天量體重", "任意停用利尿劑", "高鈉飲食", "平躺可改善端坐呼吸"],
+            "answer": 0,
+            "explanation": "",
+        }
+        text = fallback_explanation(question)
+        self.assertIn("體重", text)
+        self.assertIn("鈉", text)
+        self.assertIn("其他選項", text)
+
     def test_attach_notes_preserves_source_note_content_in_standard_format(self):
         questions = [
             {
@@ -108,6 +134,12 @@ class ExtractQuestionTests(unittest.TestCase):
         self.assertIn("作答關鍵：", sample)
         self.assertIn("解析：", sample)
         self.assertIn("複習提醒：", sample)
+
+    def test_extract_all_sources_does_not_emit_generic_explanation_template(self):
+        questions = extract_all_sources()
+        combined = "\n".join(question["explanation"] for question in questions)
+        self.assertNotIn("最符合題幹在考的重點", combined)
+        self.assertNotIn("把題幹關鍵字與正確選項內容一一對上", combined)
 
 
 if __name__ == "__main__":
