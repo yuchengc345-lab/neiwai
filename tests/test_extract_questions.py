@@ -153,6 +153,42 @@ class ExtractQuestionTests(unittest.TestCase):
         combined = "\n".join(question["explanation"] for question in questions)
         self.assertNotIn("本題核心判斷", combined)
 
+    def test_respiratory_units_use_question_specific_explanation_overrides(self):
+        unit7 = extract_questions_from_docx(
+            r"C:\Users\Cyril\OneDrive\Documents\單元7 呼吸系統疾病與護理1.docx",
+            "單元7 呼吸系統疾病與護理1",
+        )
+        unit8 = extract_questions_from_docx(
+            r"C:\Users\Cyril\OneDrive\Documents\單元8 呼吸系統疾病與護理2.docx",
+            "單元8 呼吸系統疾病與護理2",
+        )
+        unit9 = extract_questions_from_docx(
+            r"C:\Users\Cyril\OneDrive\Documents\單元9 呼吸系統疾病與護理3.docx",
+            "單元9 呼吸系統疾病與護理3",
+        )
+
+        suction = unit7[42]["explanation"]
+        self.assertIn("答案：抽痰管放入氣切口達15秒", suction)
+        self.assertIn("10～15秒", suction)
+        self.assertNotIn("答案：週邊血氧飽和度下降至95%", suction)
+
+        asthma_drug = unit8[69]["explanation"]
+        self.assertIn("答案：fenoterol (Berotec®)", asthma_drug)
+        self.assertIn("刺激心臟導致心悸", asthma_drug)
+
+        preop = unit9[17]["explanation"]
+        self.assertIn("答案：教導吸氣較吐氣為長", preop)
+        self.assertIn("此題問錯誤", preop)
+        self.assertNotIn("術前戒菸最主要", preop)
+
+        flail_chest = unit9[47]["explanation"]
+        self.assertIn("答案：治療主要著重於肺部再擴張", flail_chest)
+        self.assertIn("肺部能重新有效擴張", flail_chest)
+
+        final_question = unit9[-1]["explanation"]
+        self.assertIn("答案：躺向左側", final_question)
+        self.assertNotIn("大功告成", final_question)
+
     def test_extract_all_sources_does_not_emit_generic_explanation_template(self):
         questions = extract_all_sources()
         combined = "\n".join(question["explanation"] for question in questions)
