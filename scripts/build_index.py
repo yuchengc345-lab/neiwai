@@ -271,6 +271,7 @@ def render_index(questions: list[dict]) -> str:
   </main>
   <script>
     const questions = {data};
+    const GROUP_SIZE = 20;
     const unitNameMap = {{
       unit5: '單元5 腫瘤疾病與護理',
       unit7: '單元7 呼吸系統疾病與護理1',
@@ -323,6 +324,30 @@ def render_index(questions: list[dict]) -> str:
 
     const units = buildUnits();
 
+    function buildPracticeGroups() {{
+      return units.flatMap((unit) => {{
+        const unitKey = unit.questions[0]?.id.split('-')[0] ?? '';
+        const groups = [];
+        for (let start = 0; start < unit.questions.length; start += GROUP_SIZE) {{
+          const questionStart = start + 1;
+          const questionEnd = Math.min(start + GROUP_SIZE, unit.questions.length);
+          const groupNumber = Math.floor(start / GROUP_SIZE) + 1;
+          groups.push({{
+            id: `${{unitKey}}-group-${{groupNumber}}`,
+            unitName: unit.name,
+            unitDisplayName: unit.displayName,
+            groupNumber,
+            questionStart,
+            questionEnd,
+            questions: unit.questions.slice(start, start + GROUP_SIZE)
+          }});
+        }}
+        return groups;
+      }});
+    }}
+
+    const practiceGroups = buildPracticeGroups();
+
     function updateProgress() {{
       currentNumber.textContent = String(Math.min(currentIndex + 1, Math.max(activeQuestions.length, 1)));
       totalNumber.textContent = String(activeQuestions.length);
@@ -340,25 +365,25 @@ def render_index(questions: list[dict]) -> str:
       quizScreen.hidden = true;
       unitList.innerHTML = '';
 
-      units.forEach((unit) => {{
+      practiceGroups.forEach((group) => {{
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'unit-card';
         button.innerHTML = `
-          <div class="unit-card-title">${{unit.displayName}}</div>
-          <div class="unit-card-meta">${{unit.questions.length}} 題</div>
+          <div class="unit-card-title">${{group.unitDisplayName}} · 第 ${{group.groupNumber}} 組</div>
+          <div class="unit-card-meta">第 ${{group.questionStart}}-${{group.questionEnd}} 題 · ${{group.questions.length}} 題</div>
         `;
-        button.addEventListener('click', () => startUnit(unit.name));
+        button.addEventListener('click', () => startGroup(group.id));
         unitList.appendChild(button);
       }});
     }}
 
-    function startUnit(unitName) {{
-      const match = units.find((unit) => unit.name === unitName);
+    function startGroup(groupId) {{
+      const match = practiceGroups.find((group) => group.id === groupId);
       if (!match || !match.questions.length) {{
         return;
       }}
-      activeUnitName = match.displayName;
+      activeUnitName = `${{match.unitDisplayName}} · 第 ${{match.groupNumber}} 組`;
       activeQuestions = match.questions;
       currentIndex = 0;
       correctCount = 0;

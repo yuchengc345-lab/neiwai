@@ -61,7 +61,21 @@ class ProjectSkeletonTests(unittest.TestCase):
         self.assertIn("function buildUnits()", html)
         self.assertIn("let activeQuestions = []", html)
         self.assertIn("let currentScreen = 'units'", html)
-        self.assertIn("startUnit(unitName)", html)
+        self.assertIn("startGroup(groupId)", html)
+
+    def test_render_index_splits_units_into_twenty_question_groups(self):
+        html = render_index(SAMPLE_QUESTIONS[:1])
+        self.assertIn("const GROUP_SIZE = 20", html)
+        self.assertIn("function buildPracticeGroups()", html)
+        self.assertIn("questionStart", html)
+        self.assertIn("questionEnd", html)
+        self.assertIn("unit.questions.slice(start, start + GROUP_SIZE)", html)
+
+    def test_render_index_starts_selected_group_only(self):
+        html = render_index(SAMPLE_QUESTIONS[:1])
+        self.assertIn("const match = practiceGroups.find((group) => group.id === groupId)", html)
+        self.assertIn("activeQuestions = match.questions", html)
+        self.assertIn("activeUnitName = `${match.unitDisplayName} · 第 ${match.groupNumber} 組`", html)
 
     def test_render_index_scopes_progress_to_active_unit(self):
         html = render_index(SAMPLE_QUESTIONS)
