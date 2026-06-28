@@ -54,6 +54,37 @@ class ExtractQuestionTests(unittest.TestCase):
         text = fallback_explanation(question)
         self.assertIn("乙", text)
 
+    def test_fallback_explanation_uses_four_line_format(self):
+        question = {
+            "question": "有關化學治療副作用的敘述，下列何者正確？",
+            "options": ["選項甲", "選項乙", "選項丙", "選項丁"],
+            "answer": 1,
+            "explanation": "",
+        }
+        text = fallback_explanation(question)
+        self.assertIn("答案：選項乙", text)
+        self.assertIn("作答關鍵：", text)
+        self.assertIn("解析：", text)
+        self.assertIn("複習提醒：", text)
+        self.assertEqual(len(text.splitlines()), 4)
+
+    def test_attach_notes_preserves_source_note_content_in_standard_format(self):
+        questions = [
+            {
+                "id": "unitx-001",
+                "unit": "單元X",
+                "question": "題目",
+                "options": ["A", "B", "C", "D"],
+                "answer": 0,
+                "explanation": "",
+            }
+        ]
+        attach_notes(questions, "註：化學治療後應注意感染徵象與血球變化。")
+        self.assertIn("答案：A", questions[0]["explanation"])
+        self.assertIn("作答關鍵：", questions[0]["explanation"])
+        self.assertIn("解析：化學治療後應注意感染徵象與血球變化", questions[0]["explanation"])
+        self.assertIn("複習提醒：", questions[0]["explanation"])
+
     def test_extract_questions_from_docx_reads_real_source(self):
         questions = extract_questions_from_docx(
             r"C:\Users\Cyril\OneDrive\Documents\單元5 腫瘤疾病與護理.docx",
@@ -63,6 +94,17 @@ class ExtractQuestionTests(unittest.TestCase):
         self.assertEqual(questions[0]["id"], "unit5-001")
         self.assertEqual(len(questions[0]["options"]), 4)
         self.assertTrue(questions[5]["explanation"])
+
+    def test_extract_questions_from_docx_outputs_standardized_explanations(self):
+        questions = extract_questions_from_docx(
+            r"C:\Users\Cyril\OneDrive\Documents\單元5 腫瘤疾病與護理.docx",
+            "單元5 腫瘤疾病與護理",
+        )
+        sample = questions[0]["explanation"]
+        self.assertIn("答案：", sample)
+        self.assertIn("作答關鍵：", sample)
+        self.assertIn("解析：", sample)
+        self.assertIn("複習提醒：", sample)
 
 
 if __name__ == "__main__":
