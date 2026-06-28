@@ -209,6 +209,7 @@ def render_index(questions: list[dict]) -> str:
     }}
     .explanation-text {{
       margin: 8px 0 0;
+      white-space: pre-line;
     }}
     .next-button {{
       width: 100%;
