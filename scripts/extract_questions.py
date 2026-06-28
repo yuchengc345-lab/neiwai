@@ -1,7 +1,11 @@
+import json
 import re
+from pathlib import Path
+
 from docx import Document
 
 ANSWER_MAP = {"Ａ": 0, "Ｂ": 1, "Ｃ": 2, "Ｄ": 3}
+EXPLANATION_OVERRIDES_DIR = Path("data/explanations")
 
 
 def parse_question_paragraph(text: str, unit: str) -> dict:
@@ -65,6 +69,28 @@ def build_explanation(answer_text: str, clue_text: str, detail_text: str, remind
             f"作答關鍵：{normalize_sentence(clue_text)}",
             f"解析：{normalize_sentence(detail_text)}",
             f"複習提醒：{normalize_sentence(reminder_text)}",
+        ]
+    )
+
+
+def load_explanation_overrides(unit: str) -> dict[str, str]:
+    unit_number = re.search(r"單元(\d+)", unit)
+    if not unit_number:
+        return {}
+
+    path = EXPLANATION_OVERRIDES_DIR / f"unit{unit_number.group(1)}.json"
+    if not path.exists():
+        return {}
+
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def build_override_explanation(question: dict, detail_text: str) -> str:
+    correct = question["options"][question["answer"]]
+    return "\n".join(
+        [
+            f"答案：{normalize_sentence(correct)}",
+            f"解析：{normalize_sentence(detail_text)}",
         ]
     )
 
@@ -286,6 +312,7 @@ def extract_questions_from_docx(path: str, unit: str) -> list[dict]:
     doc = Document(path)
     paragraphs = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
     questions = []
+    explanation_overrides = load_explanation_overrides(unit)
 
     for text in paragraphs:
         if text.startswith("（"):
@@ -296,7 +323,9 @@ def extract_questions_from_docx(path: str, unit: str) -> list[dict]:
             attach_notes(questions, text)
 
     for item in questions:
-        if not item["explanation"]:
+        if item["id"] in explanation_overrides:
+            item["explanation"] = build_override_explanation(item, explanation_overrides[item["id"]])
+        elif not item["explanation"]:
             item["explanation"] = fallback_explanation(item)
 
     return questions

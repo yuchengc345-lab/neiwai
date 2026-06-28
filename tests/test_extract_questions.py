@@ -131,9 +131,27 @@ class ExtractQuestionTests(unittest.TestCase):
         )
         sample = questions[0]["explanation"]
         self.assertIn("答案：", sample)
-        self.assertIn("作答關鍵：", sample)
         self.assertIn("解析：", sample)
-        self.assertIn("複習提醒：", sample)
+
+    def test_unit5_uses_question_specific_explanation_overrides(self):
+        questions = extract_questions_from_docx(
+            r"C:\Users\Cyril\OneDrive\Documents\單元5 腫瘤疾病與護理.docx",
+            "單元5 腫瘤疾病與護理",
+        )
+        by_id = {question["id"]: question for question in questions}
+
+        doxorubicin = by_id["unit5-027"]["explanation"]
+        self.assertIn("Doxorubicin屬於起泡性藥物", doxorubicin)
+        self.assertIn("不可溫熱敷", doxorubicin)
+        self.assertNotIn("腫瘤概念題", doxorubicin)
+        self.assertNotIn("本題採用逐題解析", doxorubicin)
+
+        interferon = by_id["unit5-090"]["explanation"]
+        self.assertIn("干擾素治療屬於生物製劑", interferon)
+        self.assertIn("類似流行性感冒的症狀", interferon)
+
+        combined = "\n".join(question["explanation"] for question in questions)
+        self.assertNotIn("本題核心判斷", combined)
 
     def test_extract_all_sources_does_not_emit_generic_explanation_template(self):
         questions = extract_all_sources()
